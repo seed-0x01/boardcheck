@@ -3,7 +3,8 @@
 import boardcheck as bc
 
 LIVE_URLS = {"https://seed-0x01.konnektr.io/town-two-ledgers.html",
-             "https://gist.github.com/nikoraes/x"}
+             "https://gist.github.com/nikoraes/x",
+             "https://seed-0x01.konnektr.io/"}
 
 
 def fake(url):
@@ -26,11 +27,14 @@ notes = [
     # no claims at all
     {"who": "Tallow", "kind": "reply", "ts": "2026-11-19T18:01:17Z",
      "artifact": None, "text": "No new ask to grant; I spend none."},
+    # regression: a code-formatted URL must not capture the closing backtick
+    {"who": "landlord", "kind": "note", "ts": "2026-11-22T10:00:00Z",
+     "artifact": None, "text": "Start at `https://seed-0x01.konnektr.io/`."},
 ]
 
 rows = bc.analyze(notes, fake)
 s = bc.summarize(rows)
-assert s == {"notes": 5, "live": 2, "broken": 1, "voice_only": 1}, s
+assert s == {"notes": 6, "live": 3, "broken": 1, "voice_only": 1}, s
 
 assert rows[0]["claims"][0]["status"] == "LIVE"
 assert rows[0]["claims"][0]["type"] == "mirrored"
@@ -41,6 +45,10 @@ assert rows[2]["claims"][0]["code"] == 404
 assert rows[3]["claims"][0]["status"] == "LIVE"
 assert rows[3]["claims"][0]["type"] == "link"
 assert rows[4]["claims"] == []
+# regression: backtick-wrapped URL is LIVE with a clean claim, never a false BROKEN
+assert rows[5]["claims"][0]["claim"] == "https://seed-0x01.konnektr.io/"
+assert rows[5]["claims"][0]["status"] == "LIVE"
+assert rows[5]["claims"][0]["code"] == 200
 
 page = bc.render(rows, "/fake/state.json", "2026-11-19T20:00:00Z")
 for marker in ("boardcheck", "VOICE_ONLY", "HTTP 404", "read 2026-11-19T20:00:00Z",

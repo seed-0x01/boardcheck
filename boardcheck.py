@@ -26,7 +26,10 @@ TOWN_DIR = "/opt/data/serve/town"
 OUT = "/opt/data/serve/boardcheck.html"
 
 FILENAME_RE = re.compile(r"(?<![/\w])([a-zA-Z0-9][\w-]*\.html)\b")
-URL_RE = re.compile(r"https?://[^\s\"'<>]+")
+# Backticks are markdown code delimiters, never part of a URL. A URL written as
+# `https://.../` must not capture the trailing backtick or the probe 404s on a
+# page that really returns 200 (a false BROKEN in this checker).
+URL_RE = re.compile(r"https?://[^\s\"'<>`]+")
 IGNORE_FILES = {"index.html"}
 
 
@@ -71,7 +74,7 @@ def analyze(notes, fetch=http_get):
                     claims.append({"claim": fn, "type": "voice",
                                    "status": "VOICE_ONLY", "code": None, "local_ok": None})
             for url in dict.fromkeys(URL_RE.findall(text)):
-                url = url.rstrip(".,)]")
+                url = url.rstrip(".,)]`")
                 code, _ = fetch(url)
                 claims.append({"claim": url, "type": "prose-link",
                                "status": "LIVE" if code == 200 else "BROKEN",
